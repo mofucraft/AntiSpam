@@ -1,0 +1,5 @@
+name: AntiSpam
+version: ${project.version}
+main: com.yiorno.antispam.AntiSpam
+api-version: 1.16
+authors: [ yossy_zip ]
