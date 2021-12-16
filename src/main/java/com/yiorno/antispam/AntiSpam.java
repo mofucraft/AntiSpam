@@ -8,8 +8,10 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.apache.lucene.search.spell.LevensteinDistance;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class AntiSpam extends JavaPlugin implements Listener {
@@ -32,6 +34,13 @@ public final class AntiSpam extends JavaPlugin implements Listener {
     public void onChat(AsyncPlayerChatEvent e){
 
         Player p = e.getPlayer();
+
+        //挨拶は除外
+        if( (e.getMessage().contains("こん")) || (e.getMessage().contains("hello"))
+                || (e.getMessage().contains("hi")) ){
+            return;
+        }
+
 
         if(!(map.containsKey(e.getPlayer()))){
             map.put(p, e.getMessage());
