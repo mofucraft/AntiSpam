@@ -1,5 +1,6 @@
 package com.yiorno.antispam;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,8 +17,10 @@ import java.util.Map;
 
 public final class AntiSpam extends JavaPlugin implements Listener {
 
-    Map<Player, String> map = new HashMap<>();
-    ArrayList<Player> spam = new ArrayList<>();
+    static Map<Player, String> map = new HashMap<>();
+    static ArrayList<Player> spam = new ArrayList<>();
+    String prefix = ChatColor.WHITE + "<" + ChatColor.AQUA +
+            "もふちゃん" + ChatColor.WHITE + "> ";
 
     @Override
     public void onEnable() {
@@ -35,49 +38,114 @@ public final class AntiSpam extends JavaPlugin implements Listener {
 
         Player p = e.getPlayer();
 
-        //挨拶は除外
-        if( (e.getMessage().contains("こん")) || (e.getMessage().contains("hello"))
-                || (e.getMessage().contains("hi")) ){
-            return;
-        }
+        String msg = e.getMessage();
 
-
-        if(!(map.containsKey(e.getPlayer()))){
-            map.put(p, e.getMessage());
-            return;
-        }
-
-        String lastMsg = map.get(p);
-        int score = getSimilarScore(e.getMessage(), lastMsg);
-
-
-        if(score>80){
-
-            if(!(spam.contains(p))){
-                spam.add(p);
-                return;
-            }
+        //スパム判定
+        if(isSpam(p, msg)) {
 
             p.sendMessage(ChatColor.RED + "似た文は連続で送れません！");
             e.setCancelled(true);
+            return;
 
+        }
 
-        } else {
+        //チュートリアル判定
+        if(isTraveler(p)){
 
-            map.put(p, e.getMessage());
-
-            if(!(spam.contains(p))){
+            //挨拶は除外
+            if(isGreeting(msg)){
                 return;
             }
 
-            spam.remove(p);
+            //パスワードを聞いているか
+            if(isAboutPass(msg)){
 
+                p.sendMessage(prefix + "パスワードを聞くことはできません！！＾＾＃");
+                getServer().getLogger().info(p.getName() + "がパスワードを聞こうとしました");
+                e.setCancelled(true);
+
+                for(Player staff : Bukkit.getOnlinePlayers()){
+
+                    if(staff.hasPermission("mofucraft.staff")){
+                        staff.sendMessage(prefix + p.getName() + " がパスワードを聞こうとしましたヨ！");
+                    }
+
+                }
+
+                return;
+            }
+
+            p.sendMessage(prefix + "チュートリアルクリアまで挨拶以外のチャットをすることはできません！");
+            e.setCancelled(true);
         }
+
+    }
+
+    private static boolean isSpam(Player p, String msg){
+
+        //挨拶は除外
+        if(isGreeting(msg)){
+            return false;
+        }
+
+
+        if(!(map.containsKey(p))){
+            map.put(p, msg);
+            return false;
+        }
+
+        String lastMsg = map.get(p);
+        int score = getSimilarScore(msg, lastMsg);
+
+
+        //スパム判定と加点
+        if(score>80){
+
+            //スパムリストにのっているかどうか
+            if(!(spam.contains(p))){
+                spam.add(p);
+                return false;
+            } else {
+                return true;
+            }
+
+        } else {
+
+            map.put(p, msg);
+
+            if(!(spam.contains(p))){
+                return false;
+            }
+
+            //スパムリストから削除
+            spam.remove(p);
+        }
+
+        return false;
     }
 
     private static int getSimilarScore(String s1, String s2){
+
         LevensteinDistance dis =  new LevensteinDistance();
         return (int) (dis.getDistance(s1, s2) * 100);
     }
 
+    public static boolean isTraveler(Player p){
+
+        return (p.hasPermission("tutorial.yet")) && !(p.hasPermission("mofucraft.staff"));
+    }
+
+    public static boolean isAboutPass(String msg){
+
+        return (msg.contains("pasu")) || (msg.contains("pass"))
+                || (msg.contains("ぱす")) || (msg.contains("パス"));
+    }
+
+    public static boolean isGreeting(String msg){
+
+        return (msg.contains("こん")) || (msg.contains("hello"))
+                || (msg.contains("hi")) || (msg.contains("yoro"))
+                || (msg.contains("kon")) || (msg.contains("よろ"))
+                || (msg.contains("oha")) || (msg.contains("おは"));
+    }
 }
